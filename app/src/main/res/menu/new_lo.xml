@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+
+        android:id="@+id/new_share"
+
+        android:title="@string/menu_share"
+
+        />
+    <item
+
+        android:id="@+id/add_Photo"
+
+        android:title="添加照片"
+
+        />
+
+    <item
+        android:id="@+id/add_clock"
+
+        android:title="添加闹钟"
+    />
+</menu>
