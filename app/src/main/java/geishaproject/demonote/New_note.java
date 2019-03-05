@@ -18,12 +18,10 @@ import android.graphics.BitmapFactory;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
-import android.nfc.Tag;
 import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Environment;
-import android.os.SystemClock;
 import android.support.annotation.Nullable;
 
 import android.support.design.widget.FloatingActionButton;
@@ -62,11 +60,9 @@ import java.util.Date;
 import java.util.Random;
 
 
-import geishaproject.demonote.R;
 import model.Data;
 
 import presenter.DataDao;
-import presenter.MyDatabase;
 
 import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 

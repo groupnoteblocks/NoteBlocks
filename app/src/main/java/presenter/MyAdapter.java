@@ -107,8 +107,8 @@ public class MyAdapter extends BaseAdapter {
         对内容长度进行处理
      */
     public String cutLongContent(String longContent){
-        if(longContent.length()>=100) {
-            return longContent.substring(0,105)+"...";
+        if(longContent.length()>=60) {
+            return longContent.substring(0,60)+"...";
         }else{
             return longContent;
         }
