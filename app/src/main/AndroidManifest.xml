@@ -34,10 +34,12 @@
         </activity>
 
         <activity android:name="geishaproject.demonote.New_note"></activity>
+        <!--
         <activity android:name="geishaproject.model.Data"></activity>
         <activity android:name="geishaproject.presenter.MyAdapter"></activity>
         <activity android:name="geishaproject.presenter.MyDatabase"></activity>
         <activity android:name="geishaproject.presenter.MyOpenHelper"></activity>
+        -->
     </application>
 
 
