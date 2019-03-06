@@ -32,6 +32,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import android.text.SpannableString;
 import android.text.Spanned;
+import android.text.style.DynamicDrawableSpan;
 import android.text.style.ImageSpan;
 import android.util.Log;
 
@@ -84,7 +85,7 @@ public class New_note extends AppCompatActivity {
     //用于接受活动传过来的ids值以便读取对应数据
     /*
         >0 --- 数据库已有对应数据
-        0 --- 新建
+         0 --- 新建
         -1 --- 未找到对应id
      */
     int ids;
@@ -142,9 +143,25 @@ public class New_note extends AppCompatActivity {
             ed_title.setText(data.getTitle());
             ed_content.setText(data.getContent());
             SpannableString spannableString = new SpannableString("设置文字的前景色为淡蓝色");
-            ImageSpan imgSpan = new ImageSpan(MyApplication.getContext(),)；
-            spannableString.setSpan(colorSpan, 0, spannableString.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
-            ed_content.append("测试");
+            try{
+                /*
+                URL imgUrl = new URL("https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_86d58ae1.png");
+                HttpURLConnection connection = (HttpURLConnection)imgUrl.openConnection();
+                connection.setDoInput(true);
+
+                connection.connect();
+                InputStream input = connection.getInputStream();
+                */
+
+                Bitmap imgBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.baidu_img);
+                ImageSpan imgSpan = new ImageSpan(MyApplication.getContext(),imgBitmap, DynamicDrawableSpan.ALIGN_BASELINE);
+                spannableString.setSpan(imgSpan, 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                Log.d("Bitmap","success");
+            }catch (Exception e){
+                Log.d("Bitmap","faild");
+                e.printStackTrace();
+            }
+            ed_content.append(spannableString);
             //读取图片，对图片路径进行分割
             data.setPicturePathArr();
             Log.i("******size*****",""+data.getPicturePathArr().size());
