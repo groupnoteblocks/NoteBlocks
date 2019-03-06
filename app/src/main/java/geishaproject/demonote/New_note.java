@@ -587,4 +587,5 @@ public class New_note extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+
 }
