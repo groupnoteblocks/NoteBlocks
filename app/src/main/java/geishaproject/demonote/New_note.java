@@ -30,6 +30,9 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.ImageSpan;
 import android.util.Log;
 
 import android.view.Menu;
@@ -138,6 +141,10 @@ public class New_note extends AppCompatActivity {
             data = dataDao.getDataByIds(ids);
             ed_title.setText(data.getTitle());
             ed_content.setText(data.getContent());
+            SpannableString spannableString = new SpannableString("设置文字的前景色为淡蓝色");
+            ImageSpan imgSpan = new ImageSpan(MyApplication.getContext(),)；
+            spannableString.setSpan(colorSpan, 0, spannableString.length(), Spanned.SPAN_INCLUSIVE_EXCLUSIVE);
+            ed_content.append("测试");
             //读取图片，对图片路径进行分割
             data.setPicturePathArr();
             Log.i("******size*****",""+data.getPicturePathArr().size());
@@ -148,7 +155,6 @@ public class New_note extends AppCompatActivity {
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
             }
         }else{
             data=new Data(0,"","","","","");
