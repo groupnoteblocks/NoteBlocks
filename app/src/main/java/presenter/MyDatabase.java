@@ -103,17 +103,21 @@ public class MyDatabase {
         根据Data修改表中音频存储路径
      */
     public void singleUpdateDataApByData(Data data){
+        /*
         String OldAudioPath;    //存储数据库中原有的音频路径
         String NewAudioPath;    //创建的新的音频路径
+        */
         mydatabase = myOpenHelper.getWritableDatabase();
+        /*
         Cursor cursor = mydatabase.rawQuery("select audioPath from mybook where ids='"+data.getIds()+"'" , null);
         // 数据库读取初始化
         cursor.moveToFirst();
         //读取数据库数据中原有的音频路径
         OldAudioPath = cursor.getString(cursor.getColumnIndex("audioPath"));
         NewAudioPath = OldAudioPath + data.getAudioPath();
+        */
         mydatabase.execSQL(
-                "update mybook set audioPath='" + NewAudioPath
+                "update mybook set audioPath='" + data.getAudioPath()
                         + "'where ids='"      + data.getIds()
                         + "'"
         );

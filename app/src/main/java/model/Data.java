@@ -16,7 +16,7 @@ public class Data {
 
     private String audioPath;   //音频路径
 
-    ArrayList<String> audioPathArr;  //存放分割好的音频路径
+    //ArrayList<String> audioPathArr;  //存放分割好的音频路径
 
     private String picturePath; //图片路径
 
@@ -31,9 +31,9 @@ public class Data {
         this.audioPath = aP;
         this.picturePath = pP;
 
-        setAudioPathArr();
+        //setAudioPathArr();
 
-        setAudioPathArr();
+        setPicturePathArr();
 
     }
 
@@ -106,6 +106,7 @@ public class Data {
     /*
         对音频路径进行分割，分别存入audioPathArr中
      */
+    /*
     public void setAudioPathArr(){
         audioPathArr = new ArrayList<>();
         String singleAudioPath = "";
@@ -132,6 +133,7 @@ public class Data {
             }
         }
     }
+    */
 
     /*
         对图片路径进行分割，分别存入picturePathArr中
@@ -165,9 +167,11 @@ public class Data {
     /*
         获取分割好的音频路径数组audioPathArr
      */
+    /*
     public ArrayList<String> getAudioPathArr() {
         return audioPathArr;
     }
+    */
 
     /*
         获取分割好的图片路径数组picturePathArr

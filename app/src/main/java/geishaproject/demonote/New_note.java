@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import android.support.design.widget.FloatingActionButton;
@@ -46,6 +47,7 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -64,9 +66,12 @@ import java.util.Date;
 import java.util.Random;
 
 
+import manager.AudioRecordButton;
+import manager.MediaManager;
 import model.Data;
 
 import presenter.DataDao;
+import utils.PermissionHelper;
 
 import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 
@@ -106,12 +111,20 @@ public class New_note extends AppCompatActivity {
     private Button StartRecord,StopRecord,PlayRecord;
     private MediaRecorder recorder;
     private MediaPlayer player;
-    private String voicePath;  //录音文件路径
-    private long time;  //录音时长
-    File dir; //文件操作
+    private String voicePath;  //录音文件路径（旧版本）
+    private long time;  //录音时长（旧版本）
+    File dir; //文件操作（旧版本）
+    private AudioRecordButton mEmTvBtn;
+    Record mRecords;
+    //录音权限
+    PermissionHelper mHelper;
+
 
     Random rand = new Random();
     int times = rand.nextInt(10000);//闹钟唯一标识
+
+
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -126,10 +139,20 @@ public class New_note extends AppCompatActivity {
         dataDao = new DataDao(this);
         //实例化录音控件
         player = new MediaPlayer();
+        /*（旧版本）
         StartRecord = (Button) findViewById(R.id.StartBtn);
         StopRecord = (Button) findViewById(R.id.StopBtn);
+        */
+        //播放录音按钮
         PlayRecord = (Button) findViewById(R.id.PlayBtn);
-        dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksAudio");
+        //dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksAudio");（旧版本）
+
+
+        //录音部分
+        initView1();
+        initListener();
+
+
 
         //初始化拍照功能
         initView();
@@ -178,14 +201,16 @@ public class New_note extends AppCompatActivity {
         }
 
 
-        //录音操作
+        //录音操作（旧版本）
+        /*
         if (!dir.exists()) {
             dir.mkdirs();
         }
         voicePath = dir.getAbsolutePath();
-
+        */
         //绑定监听事件
         //开始录音点击事件
+        /*
         StartRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -199,6 +224,9 @@ public class New_note extends AppCompatActivity {
                 StopR();
             }
         });
+        */
+
+
         //播放录音点击事件
         PlayRecord.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -216,7 +244,72 @@ public class New_note extends AppCompatActivity {
     }
 
     /*
-        录音部分
+        录音操作
+     */
+    ///////////////////////////////////////////////////////////////////////////
+    private void initView1() {
+        mEmTvBtn = (AudioRecordButton) findViewById(R.id.em_tv_btn);
+    }
+    /*
+    录音点击事件监听
+     */
+    private void initListener() {
+        mEmTvBtn.setHasRecordPromission(false);
+        //授权处理
+        mHelper = new PermissionHelper(this);
+
+        mHelper.requestPermissions("请授予[录音]、[读写]权限，否则无法录音",
+                new PermissionHelper.PermissionListener() {
+                    @Override
+                    public void doAfterGrand(String... permission) {
+                        mEmTvBtn.setHasRecordPromission(true);
+
+                        mEmTvBtn.setAudioFinishRecorderListener(new AudioRecordButton.AudioFinishRecorderListener() {
+                            @Override
+                            public void onFinished(float seconds, String filePath) {
+                                Record recordModel = new Record();
+                                recordModel.setSecond((int) seconds <= 0 ? 1 : (int) seconds);
+                                recordModel.setPath(filePath);
+                                recordModel.setPlayed(false);
+                                mRecords = recordModel;
+                                //如果当前便签存在音频文件，则先删除原有音频文件
+                                if(!data.getAudioPath().equals("")){
+                                    deleteSingleFile(data.getAudioPath());
+                                }
+                                //音频文件路径存入data中
+                                data.setAudioPath(mRecords.getPath());
+                                Toast.makeText(New_note.this, "录音保存成功！时长："+mRecords.getSecond()+"s", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void doAfterDenied(String... permission) {
+                        mEmTvBtn.setHasRecordPromission(false);
+                        Toast.makeText(New_note.this, "请授权,否则无法录音", Toast.LENGTH_SHORT).show();
+                    }
+                }, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+    }
+
+    //直接把参数交给mHelper就行了
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        mHelper.handleRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onPause() {
+        MediaManager.release();//保证在退出该页面时，终止语音播放
+        super.onPause();
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+
+
+
+    /*
+        录音部分（旧版本）
      */
     //开始录音，保存为amr格式
     private void StartR () {
@@ -240,10 +333,13 @@ public class New_note extends AppCompatActivity {
                     e.printStackTrace();
                 }
             }
-            //Toast.makeText(New_note.this, soundFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-            //取出data中原有路径，对新路径加?，将原有路径与新路径拼接起来
-            String newAudioPath = data.getAudioPath()+soundFile.getAbsolutePath()+"?";
-            //拼接的路径重新存入data中
+            //如果当前便签存在音频，则删除
+            if(!data.getAudioPath().equals("")){
+                deleteSingleFile(data.getAudioPath());
+            }
+            //获取新的音频路径
+            String newAudioPath = soundFile.getAbsolutePath();
+            //新的音频路径重新存入data中
             data.setAudioPath(newAudioPath);
 
             Toast.makeText(New_note.this, newAudioPath, Toast.LENGTH_SHORT).show();
@@ -268,7 +364,7 @@ public class New_note extends AppCompatActivity {
         }
         time = System.currentTimeMillis();  //获取开始录音时间
     }
-    //结束录音
+    //结束录音（旧版本）
     private void StopR () {
         recorder.stop();
         long time2 = System.currentTimeMillis() - time; //计算录音时长ms
@@ -279,14 +375,9 @@ public class New_note extends AppCompatActivity {
                 Toast.makeText(New_note.this, "录音时间过短", Toast.LENGTH_SHORT).show();
             }
         }
-        //将data中的路径进行分割并存入data中的audioPathArr中
-        data.setAudioPathArr();
-        //String audioPath1 = data.getAudioPath();
         String audioPath = "";
-        //获取audioPathArr中的单个音频路径个数
-        int i = data.getAudioPathArr().size()-1;
-        //尝试最后一个音频
-        audioPath = data.getAudioPathArr().get(i);
+        //获取当前便签的音频路径
+        audioPath = data.getAudioPath();
         Log.i("AudioPath**", audioPath);
         Toast.makeText(New_note.this, "录音保存成功,时长：" + time2 + "ms" + audioPath, Toast.LENGTH_SHORT).show();
 
@@ -305,15 +396,8 @@ public class New_note extends AppCompatActivity {
             if (player != null) {
                 player.reset();
                 try {
-
-                    //String audioPath1 = data.getAudioPath();
-                    String audioPath = "";
-                    //尝试播放最后一个音频
-                    int i = data.getAudioPathArr().size() - 1;
-                    audioPath = data.getAudioPathArr().get(i);
-                    Toast.makeText(New_note.this, audioPath, Toast.LENGTH_SHORT).show();
-
-                    player.setDataSource(audioPath); //获取录音文件
+                    Toast.makeText(New_note.this, data.getAudioPath(), Toast.LENGTH_SHORT).show();
+                    player.setDataSource(data.getAudioPath()); //获取录音文件
                     player.prepare();
                     player.start();
                 } catch (IOException e) {
@@ -321,6 +405,19 @@ public class New_note extends AppCompatActivity {
                 }
 
             }
+        }
+        else{
+            Toast.makeText(New_note.this, "还未曾录音", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    /*
+        根据文件路径删除对于文件
+     */
+    private void deleteSingleFile(String filePath){
+        File file = new File(filePath);
+        if(file.exists()){
+            file.delete();
         }
     }
 

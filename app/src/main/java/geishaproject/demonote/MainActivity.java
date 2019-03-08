@@ -34,6 +34,7 @@ import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -64,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
     LayoutInflater layoutInflater;
     ArrayList<Data> arrayList;
     DataDao dataDao;
+
+    private TextView mAmTvBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -137,6 +140,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
         });
+
     }
 
     private void daleteSever(int position) {
@@ -174,5 +178,6 @@ public class MainActivity extends AppCompatActivity {
         return  true;
         //return false;????是用哪个true or false？
     }
+
 
 }
