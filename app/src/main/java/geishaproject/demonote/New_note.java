@@ -4,6 +4,7 @@ package geishaproject.demonote;
 
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.DatePickerDialog;
@@ -15,6 +16,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -22,9 +24,12 @@ import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Environment;
+import android.os.StrictMode;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 
 import android.support.v4.app.ActivityCompat;
@@ -43,6 +48,7 @@ import android.view.MenuItem;
 
 import android.view.View;
 
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -70,23 +76,27 @@ import manager.MediaManager;
 import model.Data;
 
 import presenter.DataDao;
+import presenter.PhotoTool;
 import utils.PermissionHelper;
 
 import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 
 
-public class New_note extends AppCompatActivity {
+public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPreDrawListener {
     /*  界面部分  */
     private static final String TAG = "New_note";//Log调试
     EditText ed_title;    //标题和内容文本框
     EditText ed_content;
     FloatingActionButton floatingActionButton;  //右下角按钮
     Data data;    //当前界面读取到的数据
+    PhotoTool mPhotoTool;       //图像工具类
+    static java.util.List<Bitmap> bitmaplist = new java.util.ArrayList<Bitmap>();       ////照片数组
+    String specialchar = "a";       //放置照片的特殊字符
+    Uri photoUri;                   //相机url
 
     /*  相片部分  */
     private static int REQUSET_CODE = 1;//请求码，判断是哪个回传的请求
     private int mIndex = 0;
-    ImageView mResultContainer; //ImageView mPhotoBtn;
 
     /*  录音部分  */
     private Button StartRecord,StopRecord,PlayRecord;
@@ -109,10 +119,12 @@ public class New_note extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_note);
-
         init();              //活动初始化
         addClickListenenr(); //添加活动的所有监听事件
     }
+
+
+
 
     /**
      * 活动相关初始化，在这里加入模块初始化
@@ -133,6 +145,7 @@ public class New_note extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 onBackPressed();
+
             }
         });
         addAudioListener(); //添加录音点击事件
@@ -148,8 +161,11 @@ public class New_note extends AppCompatActivity {
         int idsFlag = intent.getIntExtra("ids", 0); //根据上一个活动传过来的intent中的数据判断新建与修改
         if (idsFlag != 0) {    //根据data的ids判断是新建还是读写，如果是读写，则显示对应数据
             data = DataDao.GetDataByIds(idsFlag);
+            mPhotoTool = new PhotoTool(data);
+
         }else{                       //如果是新建，则创建一个新的数据模型
             data=new Data(0,"","","","","");
+            mPhotoTool = new PhotoTool(data);
         }
     }
 
@@ -161,7 +177,72 @@ public class New_note extends AppCompatActivity {
         ed_content = (EditText) findViewById(R.id.content);
 
         ed_title.setText(data.getTitle());  //获取对应的值
-        ed_content.setText(data.getContent());
+        mPhotoTool.doclear();
+        mPhotoTool.initloadphoto();
+
+        initifphotohave();
+    }
+
+
+
+    /**
+     * 初始化有图片的文字/没图片处理在最下面的else
+     */
+    private void initifphotohave() {
+
+        //用下面函数可以将控件宽高提前拿到
+        ed_content.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+
+            @Override
+            public void onGlobalLayout() {
+                // TODO Auto-generated method stub
+                ed_content.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+
+                mPhotoTool.addsize(ed_content.getWidth(),ed_content.getHeight());
+                String world = data.getContent();
+                String now = world;         //还有的文本
+                //全部文本
+                int startindex=0;      //要替换图片的位置
+                int endindex=0;          //要替换图片的位置
+                Log.d(TAG,"btsize:"+mPhotoTool.BitmaplistSize());
+                if (mPhotoTool.BitmaplistSize()>0)
+                    for (int i=0; i<mPhotoTool.BitmaplistSize();i++){
+                        //数据定义
+                        Log.d(TAG,""+i);
+                        String show;        //要放上去的文本
+                        //找到要替换的特殊字符位置
+                        endindex = now.indexOf(mPhotoTool.GetSpecialChar());
+                        //切割子文本
+                        show = now.substring(0,endindex);
+                        now = now.substring(endindex+1);
+                        //输出文本
+                        ed_content.append(show);
+                        //输出图片，GetSpannableString 富文本操作
+                        SpannableString spannableString = GetSpannableString(mPhotoTool.GetBitmap(i),specialchar);
+                        ed_content.append(spannableString);
+
+                    }
+                else
+                    ed_content.setText(data.getContent());
+
+            }
+        });
+
+    }
+
+    /**
+     * 将大图片窗口化压缩
+     */
+    public static Bitmap imageScale(Bitmap bitmap, int dst_w, int dst_h) {
+        int src_w = bitmap.getWidth();
+        int src_h = bitmap.getHeight();
+        float scale_w = ((float) dst_w) / src_w;
+        float scale_h = ((float) dst_h) / src_h;
+        Matrix matrix = new Matrix();
+        matrix.postScale(scale_w, scale_h);
+        Bitmap dstbmp = Bitmap.createBitmap(bitmap, 0, 0, src_w, src_h, matrix,
+                true);
+        return dstbmp;
     }
 
 
@@ -282,28 +363,47 @@ public class New_note extends AppCompatActivity {
     /**
      * 初始化拍照模块
      */
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void initPhoto() {
-        mResultContainer = this.findViewById(R.id.take_photo_container1);
+        // android 7.0系统解决拍照的问题
+        StrictMode.VmPolicy.Builder builder = new StrictMode.VmPolicy.Builder();
+        StrictMode.setVmPolicy(builder.build());
+        builder.detectFileUriExposure();
     }
 
+    /**
+     *  相机拍完照之后的回调
+     */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUSET_CODE) {
-            if (resultCode == Activity.RESULT_OK && data != null) {
+            if (resultCode == Activity.RESULT_OK ) {    //&& data != null 旧版条件，data缩略图
                 //说明成功返回
-                Bitmap result = data.getParcelableExtra("data");
+                Uri uri = null;
+                if (data != null && data.getData() != null) {
+                    uri = data.getData();
+                }
+                if (uri == null) {
+                    if (photoUri != null) {
+                        uri = photoUri;
+                    }
+                }
+                //图片的Uri转Bitmap
+                Bitmap result = null;
+                try {
+                    result = MediaStore.Images.Media.getBitmap(getContentResolver(), uri);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
                 if (result != null) {
-                    int id = mIndex;
-                    createPhoto();
-                    mResultContainer.setImageBitmap(result);
-
-                    //创建图片文件需要用到时间字符串
-                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-                    Date date = new Date(System.currentTimeMillis());
-                    String currentTime = simpleDateFormat.format(date);
-
-                    saveImg(result,currentTime+".jpg",this);
+                    SpannableString spannableString = GetSpannableString(result,specialchar);
+                    ed_content.append(spannableString);
+                    String currentTime = mPhotoTool.GetcurrentTime();
+                    //保存图片
+                    mPhotoTool.saveImg(result,currentTime+".jpg",this);
                 }
             }else if (resultCode == Activity.RESULT_CANCELED) {
                 //说明取消或失败了
@@ -312,79 +412,20 @@ public class New_note extends AppCompatActivity {
         }
     }
 
-    private void createPhoto() {
+    /**
+     * 富文本自定义函数
+     */
+    public SpannableString GetSpannableString(Bitmap bitmap,String specialchar){
+        SpannableString spannableString = new SpannableString(specialchar);
+        Log.d(TAG,"diaonma"+ed_content.getWidth()+"////"+ed_content.getHeight());
+        Bitmap imgBitmap = imageScale(bitmap,ed_content.getWidth(),Math.round(bitmap.getHeight()*((float) ed_content.getWidth()/bitmap.getWidth())));
 
-        mIndex++;
-        if (mIndex>2){
-            mIndex=0;
-        }
-    }
-    public void saveImg(Bitmap bitmap, String name, Context context) {
-        try {
-            //存放图片文件的名为NoteBlocksPicture的文件夹，，可存放多张图片
-            File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-
-            //图片文件以当前时间命名，路径为pictureFile.getAbsolutePath()
-            File pictureFile = new File(dir, name);
-            if (!pictureFile.exists()) {
-                try {
-                    pictureFile.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            String newPicturePath = data.getPicturePath()+pictureFile.getAbsolutePath()+"?";
-            //拼接的路径重新存入data中
-            data.setPicturePath(newPicturePath);
-
-            Toast.makeText(New_note.this, newPicturePath, Toast.LENGTH_SHORT).show();
-
-            Log.i("PicturePath&&&&", newPicturePath);
-            data.cutPicturePath();
-            Log.i("******size22*****",""+data.getPicturePathArr().size());
-            //////////////////////////////////////////
-            //String sdcardPath = System.getenv("EXTERNAL_STORAGE");      //获得sd卡路径
-            //String dir = sdcardPath + "/Download/ ";
-            //File file = new File(dir+name);
-            FileOutputStream out = null;
-            //////////////////////////////////////////
-
-            int checkWriteStoragePermission = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE);//获取系统是否被授予该种权限
-            if(checkWriteStoragePermission != PackageManager.PERMISSION_GRANTED){//如果没有被授予
-                ActivityCompat.requestPermissions(this,new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
-                return ;//请求获取该种权限
-            }else{
-                Toast.makeText(context,"请授权1~",Toast.LENGTH_SHORT).show();//定义好的获取权限后的处理的事件
-            }
-            //////////////////////////////////////////
-            //if (!file.exists()) {
-                // 先得到文件的上级目录，并创建上级目录，在创建文件
-            //   Log.i("SaveImg", "file no have" );
-            //    file.getParentFile().mkdir();
-            //    file.createNewFile();
-            //    Log.i("SaveImg", "file create" );
-            //}
-            //////////////////////////////////////////
-            Log.i("SaveImg", "file had" );
-            BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(pictureFile));
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100,bos);  //compress到输出outputStream
-            Uri uri = Uri.fromFile(pictureFile);                                  //获得图片的uri
-            context.sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri)); //发送广播通知更新图库，这样系统图库可以找到这张图片
-            bos.flush();
-            bos.close();
-            Log.i("SaveImg", "file ok" );
-            return ;
-
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return ;
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inSampleSize = 2;
+        Log.d(TAG,"大小为（m）："+imgBitmap.getByteCount() / 1024 / 1024+"宽度为" + imgBitmap.getWidth() + "高度为" + imgBitmap.getHeight());
+        ImageSpan imgSpan = new ImageSpan(PublicContext.getContext(),imgBitmap, DynamicDrawableSpan.ALIGN_BASELINE);
+        spannableString.setSpan(imgSpan, 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return spannableString;
     }
 
     /*  闹钟部分  */
@@ -470,34 +511,6 @@ public class New_note extends AppCompatActivity {
         //选择窗口显示
         datePickerDialog.show();
     }
-    /*
-        显示图片
-     */
-    public void getImg(int i) throws IOException {
-        //根据图片路径和i的值判断是否加载图片
-        if(!data.getPicturePath().equals("")&&i>=0) {
-            //data.setPicturePathArr();
-            String firstPicturePath = data.getPicturePathArr().get(i);
-            Log.i("PicturePath**&&&&", firstPicturePath);
-
-            File file = new File(firstPicturePath);
-
-            //////////////////////////////////////////
-            //String sdcardPath = System.getenv("EXTERNAL_STORAGE");      //获得sd卡路径
-            //String dir = sdcardPath + "/Download/ ";
-            //File file = new File(dir+name);
-            //////////////////////////////////////////
-            BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-            if (!file.exists()) {
-                throw new FileNotFoundException();
-            }
-            Bitmap bitmap = BitmapFactory.decodeStream(in);
-            in.close();
-            createPhoto();
-            mResultContainer.setImageBitmap(bitmap);
-        }
-    }
-
 
     /*  系统界面点击功能等  */
     /**
@@ -546,7 +559,27 @@ public class New_note extends AppCompatActivity {
                 Intent intentAddPhoto =new Intent();
                 intentAddPhoto.setAction("android.media.action.IMAGE_CAPTURE");
                 intentAddPhoto.addCategory("android.intent.category.DEFAULT");
-                startActivityForResult(intentAddPhoto, REQUSET_CODE);
+                //创建图片文件需要用到时间字符串
+                File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                //图片文件名
+                String name = mPhotoTool.GetcurrentTime() + ".jpg";
+                File pictureFile = new File(dir, name);
+                if (!pictureFile.exists()) {
+                    try {
+                        pictureFile.createNewFile();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Intent intents = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                photoUri = Uri.fromFile(new File(String.valueOf(pictureFile)));
+                Log.d(TAG," **!!**"+dir + String.valueOf(pictureFile));
+                intents.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+                startActivityForResult(intents, REQUSET_CODE);
+
                 break;
             case R.id.add_clock:    //添加闹钟功能
                 addclock();         //函数包装
@@ -569,5 +602,8 @@ public class New_note extends AppCompatActivity {
     }
 
 
-
+    @Override
+    public boolean onPreDraw() {
+        return false;
+    }
 }
