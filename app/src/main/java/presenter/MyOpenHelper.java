@@ -27,7 +27,7 @@ public class MyOpenHelper extends SQLiteOpenHelper {
 
     public void onCreate(SQLiteDatabase db) {
 
-        db.execSQL("create table mybook(" +                  //表名设置为mybook
+        db.execSQL("create table "+MyDatabase.GetDbTableName()+"(" +                  //表名设置为mybook
 
                 "ids integer PRIMARY KEY autoincrement," +   //设置id自增
 

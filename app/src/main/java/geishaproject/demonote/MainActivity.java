@@ -3,7 +3,6 @@ package geishaproject.demonote;
 
 
 
-import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -11,7 +10,6 @@ import android.content.DialogInterface;
 
 import android.content.Intent;
 
-import android.graphics.Bitmap;
 import android.support.design.widget.FloatingActionButton;
 
 import android.support.v7.app.AlertDialog;
@@ -31,20 +29,10 @@ import android.view.View;
 
 import android.widget.AdapterView;
 
-import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
 
@@ -54,8 +42,6 @@ import model.Data;
 import presenter.DataDao;
 import presenter.MyAdapter;
 
-import presenter.MyDatabase;
-
 
 //version 0.7
 public class MainActivity extends AppCompatActivity {
@@ -64,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
     FloatingActionButton floatingActionButton;
     LayoutInflater layoutInflater;
     ArrayList<Data> arrayList;
-    DataDao dataDao;
 
     private TextView mAmTvBtn;
 
@@ -75,8 +60,7 @@ public class MainActivity extends AppCompatActivity {
         listView = (ListView)findViewById(R.id.layout_listview);
         floatingActionButton = (FloatingActionButton)findViewById(R.id.add_note);
         layoutInflater = getLayoutInflater();
-        dataDao = new DataDao(this);
-        arrayList = dataDao.getAllDataArr();
+        arrayList = DataDao.GetAllDatas();
         MyAdapter adapter = new MyAdapter(layoutInflater,arrayList);
 
         listView.setAdapter(adapter);
@@ -115,7 +99,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onClick(DialogInterface dialog, int which) {
                                 //删除广播
                                 daleteSever(position);
-                                dataDao.deleteDataByIds(arrayList.get(position).getIds());
+                                DataDao.DeleteDataByIds(arrayList.get(position).getIds());
                                 MyAdapter myAdapter = new MyAdapter(layoutInflater,arrayList);
                                 myAdapter.notifyDataSetChanged();
                                 listView.setAdapter(myAdapter);
@@ -147,9 +131,9 @@ public class MainActivity extends AppCompatActivity {
         //删除广播
         AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         //建立广播对象
-        Intent intent = new Intent(MyApplication.getContext(),AlarmReceiver.class);
+        Intent intent = new Intent(PublicContext.getContext(),AlarmReceiver.class);
         //传送事件
-        PendingIntent pi = PendingIntent.getBroadcast(MyApplication.getContext(), arrayList.get(position).getIds(), intent, 0);
+        PendingIntent pi = PendingIntent.getBroadcast(PublicContext.getContext(), arrayList.get(position).getIds(), intent, 0);
         Log.d(TAG,""+ arrayList.get(position).getIds());
         //删除
         am.cancel(pi);

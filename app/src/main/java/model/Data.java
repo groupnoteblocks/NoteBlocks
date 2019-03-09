@@ -5,36 +5,25 @@ package model;
 import java.util.ArrayList;
 
 public class Data {
-
     private int ids;        //编号
-
     private String title;   //标题
-
     private String content; //内容
-
     private String times;   //时间
-
     private String audioPath;   //音频路径
-
-    //ArrayList<String> audioPathArr;  //存放分割好的音频路径
-
     private String picturePath; //图片路径
-
-    ArrayList<String> picturePathArr = new ArrayList<>();;  //存放分割好的图片路径
+    ArrayList<String> picturePathArr; //存放分割好的图片路径
+    ArrayList<String> audioPathArr;  //存放分割好的音频路径
 
     public Data(int id , String time , String title , String content , String aP , String pP){
-
         this.ids=id;
         this.times=time;
         this.title=title;
         this.content=content;
         this.audioPath = aP;
         this.picturePath = pP;
-
+        this.picturePathArr = new ArrayList<>();
         //setAudioPathArr();
-
-        setPicturePathArr();
-
+        cutPicturePath();
     }
 
 
@@ -138,7 +127,7 @@ public class Data {
     /*
         对图片路径进行分割，分别存入picturePathArr中
      */
-    public void setPicturePathArr(){
+    public void cutPicturePath(){
         //picturePathArr = new ArrayList<>();
         String singlePicturePath = "";
         String oldPicturePath = picturePath;
