@@ -19,6 +19,7 @@
     <uses-permission android:name="android.permission.BODY_SENSORS"/>
 
 
+
     <application
         android:name=".PublicContext"
         android:allowBackup="true"
