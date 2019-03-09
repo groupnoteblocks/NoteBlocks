@@ -101,6 +101,19 @@ public class MyDatabase {
     }
 
     /**
+     * 删除表中所有数据
+     */
+    public static void DeleteAllData(){
+        SQLiteDatabase sqlDatabase = myOpenHelper.getWritableDatabase();
+        String SQL_DELETE_ALL_DATA = " delete from " + DB_TABLE_NAME;
+
+        sqlDatabase.execSQL(SQL_DELETE_ALL_DATA);
+        sqlDatabase.close();
+    }
+
+
+
+    /**
      * 根据newArr中的Data将数据库中的表清空，并且更新值为成newArr中的值
      * @param newArr 储存Data模型的ArrayList
      */

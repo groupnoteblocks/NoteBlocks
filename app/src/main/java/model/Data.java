@@ -14,6 +14,17 @@ public class Data {
     ArrayList<String> picturePathArr; //存放分割好的图片路径
     ArrayList<String> audioPathArr;  //存放分割好的音频路径
 
+    public Data(){
+        this.ids=0;
+        this.times="";
+        this.title="";
+        this.content="";
+        this.audioPath = "";
+        this.picturePath = "";
+        this.picturePathArr = new ArrayList<>();
+    }
+
+
     public Data(int id , String time , String title , String content , String aP , String pP){
         this.ids=id;
         this.times=time;

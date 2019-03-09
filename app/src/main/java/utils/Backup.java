@@ -82,10 +82,10 @@ public class Backup {
             FileInputStream fileInputStream = new FileInputStream(JsonFilePath);
             JsonReader jsonReader = new JsonReader(new InputStreamReader(fileInputStream,"UTF-8"));
             jsonReader.beginArray();
-            Data data = new Data();
+            Data data = new Data(0,"","","","","");
             while(jsonReader.hasNext()){
                 jsonReader.beginObject();
-                data = new Data();
+                data = new Data(0,"","","","","");
                 while(jsonReader.hasNext()){
                     String s = jsonReader.nextName();
                     if(s.equals("id")){
@@ -102,6 +102,7 @@ public class Backup {
                     }
                     else if(s.equals("picturePath")){
                         data.setPicturePath(jsonReader.nextString());
+                        data.cutPicturePath();
                     }
                     else if(s.equals("times")){
                         data.setTimes(jsonReader.nextString());
