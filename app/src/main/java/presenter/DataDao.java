@@ -98,6 +98,18 @@ public class DataDao {
     }
 
     /**
+     * 删除数据库中所有数据后删除DataDao内储存的ArrayList中的所有值
+     */
+    public static void DeleteDataAllData(){
+        MyDatabase.DeleteAllData();
+        allDataArr.clear();
+        /*for(int i=0; i<allDataArr.size() ; i++){
+            allDataArr.remove(i);
+        }*/
+    }
+
+
+    /**
      * 返回数据库当前ids的最大值
      * @return 数据库当前ids的最大值
      */
