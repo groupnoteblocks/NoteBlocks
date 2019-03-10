@@ -51,6 +51,7 @@
             android:layout_gravity="bottom|end"
 
             android:layout_margin="15dp"
+            android:src="@drawable/btn_logo_add"
             app:backgroundTint="@color/colorJabinGreen" />
 
 
