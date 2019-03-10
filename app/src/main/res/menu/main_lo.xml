@@ -11,16 +11,16 @@
         />
     <item
 
-        android:id="@+id/menu_backups"
+        android:id="@+id/menu_export"
 
-        android:title="备份"
+        android:title="导出"
 
         />
     <item
 
-        android:id="@+id/menu_recover"
+        android:id="@+id/menu_import"
 
-        android:title="恢复"
+        android:title="导入"
 
         />
     <item
