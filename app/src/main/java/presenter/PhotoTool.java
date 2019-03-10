@@ -174,22 +174,13 @@ public class PhotoTool extends Activity{
     public void saveImg(Bitmap bitmap, String name, Context context) {
         try {
             //存放图片文件的名为NoteBlocksPicture的文件夹，，可存放多张图片
-            //File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
-            //if (!dir.exists()) {
-            //    dir.mkdirs();
-            //}
-
-            File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocks");
+            File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            File dir1 = new File(dir, "picture");
-            if (!dir1.exists()) {
-                dir1.mkdirs();
-            }
 
             //图片文件以当前时间命名，路径为pictureFile.getAbsolutePath()
-            File pictureFile = new File(dir1, name);
+            File pictureFile = new File(dir, name);
             if (!pictureFile.exists()) {
                 try {
                     pictureFile.createNewFile();

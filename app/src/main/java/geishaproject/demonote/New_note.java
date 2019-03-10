@@ -352,7 +352,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
      * 根据文件路径删除对应文件
      * @param filePath 文件路径
      */
-    private static void deleteSingleFile(String filePath){
+    private void deleteSingleFile(String filePath){
         File file = new File(filePath);
         if(file.exists()){
             file.delete();
@@ -560,23 +560,13 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 intentAddPhoto.setAction("android.media.action.IMAGE_CAPTURE");
                 intentAddPhoto.addCategory("android.intent.category.DEFAULT");
                 //创建图片文件需要用到时间字符串
-                /*File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }*/
-
-                File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocks");
+                File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
                 if (!dir.exists()) {
                     dir.mkdirs();
                 }
-                File dir1 = new File(dir, "picture");
-                if (!dir1.exists()) {
-                    dir1.mkdirs();
-                }
-
                 //图片文件名
                 String name = mPhotoTool.GetcurrentTime() + ".jpg";
-                File pictureFile = new File(dir1, name);
+                File pictureFile = new File(dir, name);
                 if (!pictureFile.exists()) {
                     try {
                         pictureFile.createNewFile();
@@ -586,7 +576,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 }
                 Intent intents = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 photoUri = Uri.fromFile(new File(String.valueOf(pictureFile)));
-                Log.d(TAG," **!!**"+dir1 + String.valueOf(pictureFile));
+                Log.d(TAG," **!!**"+dir + String.valueOf(pictureFile));
                 intents.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
                 startActivityForResult(intents, REQUSET_CODE);
 
