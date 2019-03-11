@@ -1,47 +1,37 @@
 package presenter;
 
-import android.content.Context;
 import android.util.Log;
 
 import java.util.ArrayList;
-import java.util.Collections;
 
-import geishaproject.demonote.MainActivity;
+import geishaproject.demonote.PublicContext;
 import model.Data;
 
 public class DataDao {
-    Context context;
+    //逻辑处理时能够取到的数组，与数据库同步更新
+    private static ArrayList<Data> allDataArr = MyDatabase.getAllDataArray();
 
-    ArrayList<Data> allDataArr;
-
-    MyDatabase myDatabase;
-
-    public DataDao(Context context ){
-        this.myDatabase = new MyDatabase(context);
-        allDataArr = myDatabase.getAllDataArray();
+    /**
+     * 重新从数据库获取完整的数据集合
+     */
+    public static void RefreshDatas(){
+        allDataArr = MyDatabase.getAllDataArray();
     }
 
-    /*
-        异常处理Data模型
+    /**
+     * 返回数据库数据同步ArrayList
+     * @return ArrayList
      */
-    public Data getErrorData(String errorText){
-        Data errorData = new Data(-1,"error","error","error:"+errorText,"error","error");
-        return errorData;
-
-    }
-
-    /*
-        返回一个完整数据库属性的数组
-     */
-    public ArrayList<Data> getAllDataArr(){
+    public static ArrayList<Data> GetAllDatas(){
         return allDataArr;
     }
 
-
-    /*
-        指定Id获取对应的Data
+    /**
+     * 指定Id获取对应的Data
+     * @param ids
+     * @return
      */
-    public Data getDataByIds(int ids){
+    public static Data GetDataByIds(int ids){
         //遍历数组取得对应id值的Data
         for(int i=0 ; i< allDataArr.size() ; i++){
             if(ids == allDataArr.get(i).getIds()){
@@ -50,128 +40,78 @@ public class DataDao {
             }
         }
         //若取不到则返回异常标志Data
-        return getErrorData("没有找到对应ids值的数据");
+        return GetErrorData("没有找到对应ids值的数据");
     }
 
-    /*
-        指定Id获取对应的音频路径
+    /**
+     * 根据Data中的数据更新数据库后同步更新ArrayList
+     * @param data
+     * @return
      */
-    public String getAudioPathByIds(int ids){
-        String audioPath = myDatabase.getAudioPathByIds(ids);
-        return audioPath;
-    }
-
-    /*
-        根据Data完全修改
-     */
-    public boolean fullChangeDataByData(Data data){
-        myDatabase.fullUpdateDataByData(data);
-        return true;
-    }
-    /*
-        根据ids修改标题
-     */
-    public boolean singleSetDataTitleByIds(int ids,String newTitle){
-        Data tmpData =  getDataByIds(ids);
-        if(tmpData.getIds()!=-1) {
-            tmpData.setTitle(newTitle);
-            myDatabase.fullUpdateDataByData(tmpData);
-            return true;
-        }else{
-            Log.d("SetDataTitleByIds", "单独修改标题失败，没有找到对应ID值的数据");
-            return false;
+    public static boolean ChangeData(Data data){
+        boolean success = false;
+        MyDatabase.UpdateData(data);
+        for(int i=0 ; i< allDataArr.size() ; i++){
+            //根据ids替换对应数据
+            if(data.getIds() == allDataArr.get(i).getIds()){
+                allDataArr.set(i,data);
+                success = true;
+                break;
+            }
         }
+        return success;
     }
 
-    /*
-        根据ids修改内容
-     */
-    public boolean singleSetDataContentByIds(int ids,String newContent){
-        Data tmpData =  getDataByIds(ids);
-        if(tmpData.getIds()!=-1) {
-            tmpData.setContent(newContent);
-            myDatabase.fullUpdateDataByData(tmpData);
-            return true;
-        }else{
-            Log.d("SetDataContentByIds", "单独修改内容失败，没有找到对应ID值的数据");
-            return false;
-        }
-    }
 
-    /*
-        根据ids修改时间
+    /**
+     * 向数据库和ArrayList中同步添加数据
+     * @param newData 一个带有新数据的Data模型对象
+     * @return 是否成功
      */
-    public boolean singleSetDataTimesByIds(int ids,String newTimes){
-        Data tmpData =  getDataByIds(ids);
-        if(tmpData.getIds()!=-1) {
-            tmpData.setTimes(newTimes);
-            myDatabase.fullUpdateDataByData(tmpData);
-            return true;
-        }else{
-            Log.d("SetDataTimesByIds", "单独修改时间失败，没有找到对应ID值的数据");
-            return false;
-        }
-    }
-
-    /*
-        根据ids修改录音路径
-     */
-    public boolean singleSetDataAudioathByIds(int ids,String newAudioPath){
-        Data tmpData =  getDataByIds(ids);
-        if(tmpData.getIds()!=-1) {
-            tmpData.setAudioPath(newAudioPath);
-            myDatabase.singleUpdateDataApByData(tmpData);
-            return true;
-        }else{
-            Log.d("setDataAudioathByIds", "单独修改录音路径失败，没有找到对应ID值的数据");
-            return false;
-        }
-    }
-
-    /*
-        根据ids修改图片路径
-     */
-    public boolean singleSetDataPicturePathByIds(int ids,String newPicturePath){
-        Data tmpData =  getDataByIds(ids);
-        if(tmpData.getIds()!=-1) {
-            tmpData.setPicturePath(newPicturePath);
-            myDatabase.fullUpdateDataByData(tmpData);
-            return true;
-        }else{
-            Log.d("SetDataPicturePathByIds", "单独修改图片失败，没有找到对应ID值的数据");
-            return false;
-        }
-    }
-
-    /*
-        添加数据:根据Data中title等内容插入数据库后返回ids值，设定ids值后添加进arr里面
-     */
-    public boolean addNewDataByData(Data newData){
-        int newDataIds;
-        newDataIds = myDatabase.insertNewDataByData(newData);
+    public static boolean AddNewData(Data newData){
+        int newDataIds;//记录数据库返回的数据在数据库中自动获取的ids值用于同步设置DataDao类中的ids值
+        newDataIds = MyDatabase.InsertNewData(newData);
+        //获取ids后同步设置ids
         newData.setIds(newDataIds);
-        Log.d("DataDao.setText",newData.toString());
+        //从头部插入保证新的标签在上端显示
         allDataArr.add(0,newData);
         return true;
     }
 
-    /*
-        删除数据:根据ids删除数据库后删除arr
+    /**
+     * 根据ids删除数据库后删除DataDao内储存的ArrayList中对应的值
+     * @param ids
+     * @return success值代表是否成功
      */
-    public boolean deleteDataByIds(int ids){
-        myDatabase.deleteDataByIds(ids);
+    public static boolean DeleteDataByIds(int ids){
+        boolean success = false;
+        MyDatabase.DeleteDataByIds(ids);
         for(int i=0 ; i< allDataArr.size() ; i++){
+            //若查到对应ids则删除对应Data
             if(ids == allDataArr.get(i).getIds()){
-                Log.d("del","getids="+allDataArr.get(i).getIds()+";ids="+ids+";i="+i);
-                //若查到对应ids则删除对应Data
                 allDataArr.remove(i);
+                success = true;
                 break;
             }
         }
-        return true;
-    }
-    public int getDatabaseMaxIds(){
-        return myDatabase.getDatabaseCurrentMaxIds();
+        return success;
     }
 
+    /**
+     * 返回数据库当前ids的最大值
+     * @return 数据库当前ids的最大值
+     */
+    public static int GetMaxIds(){
+        return MyDatabase.GetMaxIds();
+    }
+
+    /**
+     * 异常Data模型，用于处理异常时返回带有异常标记的Data对象
+     * @param errorText 异常参数
+     * @return
+     */
+    public static Data GetErrorData(String errorText){
+        Data errorData = new Data(-1,"error","error","error:"+errorText,"error","error");
+        return errorData;
+    }
 }

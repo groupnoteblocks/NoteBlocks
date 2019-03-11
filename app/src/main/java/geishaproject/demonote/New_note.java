@@ -22,6 +22,7 @@ import android.os.Build;
 import android.os.Bundle;
 
 import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import android.support.design.widget.FloatingActionButton;
@@ -64,256 +65,196 @@ import java.util.Date;
 import java.util.Random;
 
 
+import manager.AudioRecordButton;
+import manager.MediaManager;
 import model.Data;
 
 import presenter.DataDao;
+import utils.PermissionHelper;
 
 import static android.app.AlertDialog.THEME_HOLO_LIGHT;
 
 
 public class New_note extends AppCompatActivity {
+    /*  界面部分  */
     private static final String TAG = "New_note";//Log调试
-    //标题和内容文本框
-    EditText ed_title;
+    EditText ed_title;    //标题和内容文本框
     EditText ed_content;
-    //右下角按钮
-    FloatingActionButton floatingActionButton;
-    //工具类
-    DataDao dataDao;
-    //当前
-    Data data;
-    //用于接受活动传过来的ids值以便读取对应数据
-    /*
-        >0 --- 数据库已有对应数据
-         0 --- 新建
-        -1 --- 未找到对应id
-     */
-    int ids;
+    FloatingActionButton floatingActionButton;  //右下角按钮
+    Data data;    //当前界面读取到的数据
 
-    //相片部分
-    //相片控件数组
-    private int[] box = {
-            R.id.take_photo_container1,
-            R.id.take_photo_container2,
-            R.id.take_photo_container3
-    };
+    /*  相片部分  */
     private static int REQUSET_CODE = 1;//请求码，判断是哪个回传的请求
     private int mIndex = 0;
-    //ImageView mPhotoBtn;
-    ImageView mResultContainer;
+    ImageView mResultContainer; //ImageView mPhotoBtn;
 
-    //录音部分
+    /*  录音部分  */
     private Button StartRecord,StopRecord,PlayRecord;
     private MediaRecorder recorder;
     private MediaPlayer player;
-    private String voicePath;  //录音文件路径
-    private long time;  //录音时长
-    File dir; //文件操作
+    private String voicePath;  //录音文件路径（旧版本）
+    private long time;   //录音时长（旧版本）
+    File dir; //文件操作（旧版本）
+    private AudioRecordButton mEmTvBtn;
+    Record mRecords;
+    PermissionHelper mHelper; //录音权限
 
+    /*  闹钟部分  */
     Random rand = new Random();
     int times = rand.nextInt(10000);//闹钟唯一标识
+
+
+    /*  活动入口  */
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_note);
-        //实例化操作
-        //实例化两个文字控件
-        ed_title = (EditText) findViewById(R.id.title);
-        ed_content = (EditText) findViewById(R.id.content);
-        //实例化右下角按钮控件
-        floatingActionButton = (FloatingActionButton) findViewById(R.id.finish);
-        //实例化工具类
-        dataDao = new DataDao(this);
-        //实例化录音控件
-        player = new MediaPlayer();
-        StartRecord = (Button) findViewById(R.id.StartBtn);
-        StopRecord = (Button) findViewById(R.id.StopBtn);
-        PlayRecord = (Button) findViewById(R.id.PlayBtn);
-        dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksAudio");
 
-        //初始化拍照功能
-        initView();
+        init();              //活动初始化
+        addClickListenenr(); //添加活动的所有监听事件
+    }
 
-        //获取上一个活动传来的intent
-        Intent intent = this.getIntent();
-        ids = intent.getIntExtra("ids", 0);
-        //根据ids判断是新建还是读写，如果是读写，则显示对应数据
-        if (ids != 0) {
-            data = dataDao.getDataByIds(ids);
-            ed_title.setText(data.getTitle());
-            ed_content.setText(data.getContent());
-            SpannableString spannableString = new SpannableString("设置文字的前景色为淡蓝色");
-            try{
-                /*
-                URL imgUrl = new URL("https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo_top_86d58ae1.png");
-                HttpURLConnection connection = (HttpURLConnection)imgUrl.openConnection();
-                connection.setDoInput(true);
+    /**
+     * 活动相关初始化，在这里加入模块初始化
+     */
+    private void init(){
+        floatingActionButton = (FloatingActionButton) findViewById(R.id.finish); //实例化右下角按钮控件
+        initAudio(); //初始化录音功能模块
+        initPhoto(); //初始化拍照功能模块
+        initDataModel(); //初始化数据模型
+        initEditText();  //初始化文本编辑框
+        Log.d("initFinish","width:"+ed_content.getWidth()+",text: "+ed_content.getText());
+    }
 
-                connection.connect();
-                InputStream input = connection.getInputStream();
-                */
-
-                Bitmap imgBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.baidu_img);
-                ImageSpan imgSpan = new ImageSpan(MyApplication.getContext(),imgBitmap, DynamicDrawableSpan.ALIGN_BASELINE);
-                spannableString.setSpan(imgSpan, 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                Log.d("Bitmap","success");
-            }catch (Exception e){
-                Log.d("Bitmap","faild");
-                e.printStackTrace();
-            }
-            ed_content.append(spannableString);
-            //读取图片，对图片路径进行分割
-            data.setPicturePathArr();
-            Log.i("******size*****",""+data.getPicturePathArr().size());
-            //最多加载3张图片（最后拍的3张）
-            for(int i=data.getPicturePathArr().size();i>data.getPicturePathArr().size()-3;i--){
-                try {
-                    getImg(i-1);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }else{
-            data=new Data(0,"","","","","");
-        }
-
-
-        //录音操作
-        if (!dir.exists()) {
-            dir.mkdirs();
-        }
-        voicePath = dir.getAbsolutePath();
-
-        //绑定监听事件
-        //开始录音点击事件
-        StartRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                StartR();
-            }
-        });
-        //结束录音点击事件
-        StopRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                StopR();
-            }
-        });
-        //播放录音点击事件
-        PlayRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PlayR();
-            }
-        });
-        //为悬浮按钮设置监听事件
-        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+    /**
+     * 添加活动的所有监听事件，在这里加入添加模块点击事件函数
+     */
+    private void addClickListenenr(){
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {  //为悬浮按钮设置监听事件
             @Override
             public void onClick(View v) {
                 onBackPressed();
             }
         });
+        addAudioListener(); //添加录音点击事件
+
     }
 
-    /*
-        录音部分
+
+    /**
+     * 初始化数据模型
      */
-    //开始录音，保存为amr格式
-    private void StartR () {
-        if (recorder == null) {
-            //存放录音文件的名为NoteBlocksAudio的文件夹，，可存放多个音频
-            File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksAudio");
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
-            //创建录音文件需要用到时间字符串
-            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
-            Date date = new Date(System.currentTimeMillis());
-            String currentTime = simpleDateFormat.format(date);
-
-            //音频文件以当前时间命名，路径为soundFile.getAbsolutePath()
-            File soundFile = new File(dir, currentTime + ".amr");
-            if (!soundFile.exists()) {
-                try {
-                    soundFile.createNewFile();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            //Toast.makeText(New_note.this, soundFile.getAbsolutePath(), Toast.LENGTH_SHORT).show();
-            //取出data中原有路径，对新路径加?，将原有路径与新路径拼接起来
-            String newAudioPath = data.getAudioPath()+soundFile.getAbsolutePath()+"?";
-            //拼接的路径重新存入data中
-            data.setAudioPath(newAudioPath);
-
-            Toast.makeText(New_note.this, newAudioPath, Toast.LENGTH_SHORT).show();
-
-            Log.i("AudioPath*", newAudioPath);
-
-
-            recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);  //音频输入源，设置麦克风
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_WB);   //设置输出格式
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_WB);   //设置编码格式
-            recorder.setOutputFile(soundFile.getAbsolutePath());  //输出路径
-
-            voicePath = dir.getAbsolutePath();
-            try {
-                recorder.prepare();  //准备
-                recorder.start();  //开始录制
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-        time = System.currentTimeMillis();  //获取开始录音时间
-    }
-    //结束录音
-    private void StopR () {
-        recorder.stop();
-        long time2 = System.currentTimeMillis() - time; //计算录音时长ms
-        if (time2 < 1000) {      //时长短语1秒则删除
-            File file = new File(voicePath+Integer.toString(ids));
-            if (file.exists()) {
-                file.delete();
-                Toast.makeText(New_note.this, "录音时间过短", Toast.LENGTH_SHORT).show();
-            }
-        }
-        //将data中的路径进行分割并存入data中的audioPathArr中
-        data.setAudioPathArr();
-        //String audioPath1 = data.getAudioPath();
-        String audioPath = "";
-        //获取audioPathArr中的单个音频路径个数
-        int i = data.getAudioPathArr().size()-1;
-        //尝试最后一个音频
-        audioPath = data.getAudioPathArr().get(i);
-        Log.i("AudioPath**", audioPath);
-        Toast.makeText(New_note.this, "录音保存成功,时长：" + time2 + "ms" + audioPath, Toast.LENGTH_SHORT).show();
-
-        //重置
-        recorder.release();
-        if (recorder != null) {
-            recorder.release();
-            recorder = null;
-            System.gc();
+    public void initDataModel(){
+        Intent intent = this.getIntent();  //获取上一个活动传来的intent
+        int idsFlag = intent.getIntExtra("ids", 0); //根据上一个活动传过来的intent中的数据判断新建与修改
+        if (idsFlag != 0) {    //根据data的ids判断是新建还是读写，如果是读写，则显示对应数据
+            data = DataDao.GetDataByIds(idsFlag);
+        }else{                       //如果是新建，则创建一个新的数据模型
+            data=new Data(0,"","","","","");
         }
     }
 
-    //播放录音
+    /**
+     * 初始化文本编辑框
+     */
+    private void initEditText(){
+        ed_title = (EditText) findViewById(R.id.title);    //实例化文字编辑框
+        ed_content = (EditText) findViewById(R.id.content);
+
+        ed_title.setText(data.getTitle());  //获取对应的值
+        ed_content.setText(data.getContent());
+    }
+
+
+    /*  录音  */
+    /**
+     * 初始化录音模块
+     */
+    private void initAudio() {
+        player = new MediaPlayer();   //实例化录音控件
+        PlayRecord = (Button) findViewById(R.id.PlayBtn);  //播放录音按钮
+        mEmTvBtn = (AudioRecordButton) findViewById(R.id.em_tv_btn);
+    }
+
+    /**
+     * 添加录音点击事件监听
+     */
+    private void addAudioListener() {
+        PlayRecord.setOnClickListener(new View.OnClickListener() {        //播放录音点击事件
+            @Override
+            public void onClick(View v) {
+                PlayR();
+            }
+        });
+
+        mEmTvBtn.setHasRecordPromission(false);
+        //授权处理
+        mHelper = new PermissionHelper(this);
+
+        mHelper.requestPermissions("请授予[录音]、[读写]权限，否则无法录音",
+                new PermissionHelper.PermissionListener() {
+                    @Override
+                    public void doAfterGrand(String... permission) {
+                        mEmTvBtn.setHasRecordPromission(true);
+
+                        mEmTvBtn.setAudioFinishRecorderListener(new AudioRecordButton.AudioFinishRecorderListener() {
+                            @Override
+                            public void onFinished(float seconds, String filePath) {
+                                Record recordModel = new Record();
+                                recordModel.setSecond((int) seconds <= 0 ? 1 : (int) seconds);
+                                recordModel.setPath(filePath);
+                                recordModel.setPlayed(false);
+                                mRecords = recordModel;
+                                //如果当前便签存在音频文件，则先删除原有音频文件
+                                if(!data.getAudioPath().equals("")){
+                                    deleteSingleFile(data.getAudioPath());
+                                }
+                                //音频文件路径存入data中
+                                data.setAudioPath(mRecords.getPath());
+                                Toast.makeText(New_note.this, "录音保存成功！时长："+mRecords.getSecond()+"s", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void doAfterDenied(String... permission) {
+                        mEmTvBtn.setHasRecordPromission(false);
+                        Toast.makeText(New_note.this, "请授权,否则无法录音", Toast.LENGTH_SHORT).show();
+                    }
+                }, Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+    }
+
+    /**
+     * 直接把参数交给mHelper就行了
+     * @param requestCode
+     * @param permissions
+     * @param grantResults
+     */
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        mHelper.handleRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    /**
+     * 终止语音播放
+     */
+    @Override
+    protected void onPause() {
+        MediaManager.release();//保证在退出该页面时，终止语音播放
+        super.onPause();
+    }
+
+    /**
+     * 播放录音
+     */
     private void PlayR () {
         if(!data.getAudioPath().equals("")) {
             if (player != null) {
                 player.reset();
                 try {
-
-                    //String audioPath1 = data.getAudioPath();
-                    String audioPath = "";
-                    //尝试播放最后一个音频
-                    int i = data.getAudioPathArr().size() - 1;
-                    audioPath = data.getAudioPathArr().get(i);
-                    Toast.makeText(New_note.this, audioPath, Toast.LENGTH_SHORT).show();
-
-                    player.setDataSource(audioPath); //获取录音文件
+                    Toast.makeText(New_note.this, data.getAudioPath(), Toast.LENGTH_SHORT).show();
+                    player.setDataSource(data.getAudioPath()); //获取录音文件
                     player.prepare();
                     player.start();
                 } catch (IOException e) {
@@ -322,13 +263,27 @@ public class New_note extends AppCompatActivity {
 
             }
         }
+        else{
+            Toast.makeText(New_note.this, "还未曾录音", Toast.LENGTH_SHORT).show();
+        }
     }
 
-    /*
-        拍照部分
+    /**
+     * 根据文件路径删除对应文件
+     * @param filePath 文件路径
      */
-    //初始化图片拍照存储
-    private void initView() {
+    private void deleteSingleFile(String filePath){
+        File file = new File(filePath);
+        if(file.exists()){
+            file.delete();
+        }
+    }
+
+    /*  拍照部分  */
+    /**
+     * 初始化拍照模块
+     */
+    private void initPhoto() {
         mResultContainer = this.findViewById(R.id.take_photo_container1);
     }
 
@@ -359,7 +314,7 @@ public class New_note extends AppCompatActivity {
     }
 
     private void createPhoto() {
-        mResultContainer = this.findViewById(box[mIndex]);
+
         mIndex++;
         if (mIndex>2){
             mIndex=0;
@@ -390,7 +345,7 @@ public class New_note extends AppCompatActivity {
             Toast.makeText(New_note.this, newPicturePath, Toast.LENGTH_SHORT).show();
 
             Log.i("PicturePath&&&&", newPicturePath);
-            data.setPicturePathArr();
+            data.cutPicturePath();
             Log.i("******size22*****",""+data.getPicturePathArr().size());
             //////////////////////////////////////////
             //String sdcardPath = System.getenv("EXTERNAL_STORAGE");      //获得sd卡路径
@@ -433,104 +388,11 @@ public class New_note extends AppCompatActivity {
         return ;
     }
 
+    /*  闹钟部分  */
 
-    /*
-        显示图片
+    /**
+     * 添加闹钟函数
      */
-    public void getImg(int i) throws IOException {
-        //根据图片路径和i的值判断是否加载图片
-        if(!data.getPicturePath().equals("")&&i>=0) {
-            //data.setPicturePathArr();
-            String firstPicturePath = data.getPicturePathArr().get(i);
-            Log.i("PicturePath**&&&&", firstPicturePath);
-
-            File file = new File(firstPicturePath);
-
-            //////////////////////////////////////////
-            //String sdcardPath = System.getenv("EXTERNAL_STORAGE");      //获得sd卡路径
-            //String dir = sdcardPath + "/Download/ ";
-            //File file = new File(dir+name);
-            //////////////////////////////////////////
-            BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
-            if (!file.exists()) {
-                throw new FileNotFoundException();
-            }
-            Bitmap bitmap = BitmapFactory.decodeStream(in);
-            in.close();
-            createPhoto();
-            mResultContainer.setImageBitmap(bitmap);
-        }
-    }
-
-
-    /*
-        系统界面点击功能等
-     */
-    //重写返回建方法，如果是属于新建则插入数据表并返回主页面，如果是修改，修改表中数据并返回主页面
-    @Override
-    public void onBackPressed() {
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd   HH:mm");//编辑便签的时间，格式化
-        Date date = new Date(System.currentTimeMillis());
-        String time = simpleDateFormat.format(date);
-        //给当前data更新数据,如果有录音和拍照数据，应该在对应的过程中调用data.setXXX
-        data.setTimes(time);
-        data.setTitle(ed_title.getText().toString());
-        data.setContent(ed_content.getText().toString());
-        Log.d("backIDS", "onBack: "+ids);
-        if(ids!=0){
-            //根据data修改数据库
-            dataDao.fullChangeDataByData(data);
-            Intent intent=new Intent(New_note.this,MainActivity.class);
-            startActivity(intent);
-            New_note.this.finish();
-        }
-        //新建日记
-        else{
-            //根据data在数据库新建
-            dataDao.addNewDataByData(data);
-            Intent intent=new Intent(New_note.this,MainActivity.class);
-            startActivity(intent);
-            New_note.this.finish();
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.new_lo,menu);
-        return true;
-    }
-
-
-
-    @Override
-
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case R.id.new_share :  //分享功能
-                Intent intent=new Intent(Intent.ACTION_SEND);
-                intent.setType("text/plain");
-                intent.putExtra(Intent.EXTRA_TEXT,//分享类型设置为文本型
-                        "标题："+ed_title.getText().toString()+"    " +
-                                "内容："+ed_content.getText().toString());
-                startActivity(intent);
-                break;
-            case R.id.add_Photo:    //添加照片功能
-                Intent intentAddPhoto =new Intent();
-                intentAddPhoto.setAction("android.media.action.IMAGE_CAPTURE");
-                intentAddPhoto.addCategory("android.intent.category.DEFAULT");
-                startActivityForResult(intentAddPhoto, REQUSET_CODE);
-                break;
-            case R.id.add_clock:    //添加闹钟功能
-                addclock();         //函数包装
-                break;
-            default:
-                break;
-        }
-        return false;
-
-    }
-
-    //添加闹钟功能函数
     private void addclock() {
         times++;    //唯一标识改变
         //设置日期数据
@@ -579,8 +441,8 @@ public class New_note extends AppCompatActivity {
                         //传送事件
                         PendingIntent pi = null;
                         if(data.getIds()==0){
-                            pi = PendingIntent.getBroadcast(MyApplication.getContext(), dataDao.getDatabaseMaxIds(), intent, 0);
-                            System.out.print( dataDao.getDatabaseMaxIds());
+                            pi = PendingIntent.getBroadcast(PublicContext.getContext(), DataDao.GetMaxIds(), intent, 0);
+                            System.out.print( DataDao.GetMaxIds());
                         }else {
                             pi = PendingIntent.getBroadcast(New_note.this, data.getIds(), intent, 0);
                             Log.d(TAG,""+data.getIds());
@@ -609,6 +471,104 @@ public class New_note extends AppCompatActivity {
         //选择窗口显示
         datePickerDialog.show();
     }
+    /*
+        显示图片
+     */
+    public void getImg(int i) throws IOException {
+        //根据图片路径和i的值判断是否加载图片
+        if(!data.getPicturePath().equals("")&&i>=0) {
+            //data.setPicturePathArr();
+            String firstPicturePath = data.getPicturePathArr().get(i);
+            Log.i("PicturePath**&&&&", firstPicturePath);
+
+            File file = new File(firstPicturePath);
+
+            //////////////////////////////////////////
+            //String sdcardPath = System.getenv("EXTERNAL_STORAGE");      //获得sd卡路径
+            //String dir = sdcardPath + "/Download/ ";
+            //File file = new File(dir+name);
+            //////////////////////////////////////////
+            BufferedInputStream in = new BufferedInputStream(new FileInputStream(file));
+            if (!file.exists()) {
+                throw new FileNotFoundException();
+            }
+            Bitmap bitmap = BitmapFactory.decodeStream(in);
+            in.close();
+            createPhoto();
+            mResultContainer.setImageBitmap(bitmap);
+        }
+    }
+
+
+    /*  系统界面点击功能等  */
+    /**
+     * 重写返回建方法，如果是属于新建则插入数据表并返回主页面，如果是修改，修改表中数据并返回主页面
+     */
+    @Override
+    public void onBackPressed() {
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd   HH:mm");//编辑便签的时间，格式化
+        Date date = new Date(System.currentTimeMillis());
+        String time = simpleDateFormat.format(date);
+
+        data.setTimes(time);    //给当前data更新数据,如果有录音和拍照数据，应该在对应的过程中调用data.setXXX
+        data.setTitle(ed_title.getText().toString());
+        data.setContent(ed_content.getText().toString());
+
+        if(data.getIds()!=0){ //根据data修改数据库
+            DataDao.ChangeData(data);
+            Intent intent=new Intent(New_note.this,MainActivity.class);
+            startActivity(intent);
+            New_note.this.finish();
+        } else{  //根据data新建数据
+            DataDao.AddNewData(data);
+            Intent intent=new Intent(New_note.this,MainActivity.class);
+            startActivity(intent);
+            New_note.this.finish();
+        }
+    }
+
+    /**
+     * 设置右上角菜单的点击事件
+     * @param item
+     * @return
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case R.id.new_share :  //分享功能
+                Intent intent=new Intent(Intent.ACTION_SEND);
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_TEXT,//分享类型设置为文本型
+                        "标题："+ed_title.getText().toString()+"    " +
+                                "内容："+ed_content.getText().toString());
+                startActivity(intent);
+                break;
+            case R.id.add_Photo:    //添加照片功能
+                Intent intentAddPhoto =new Intent();
+                intentAddPhoto.setAction("android.media.action.IMAGE_CAPTURE");
+                intentAddPhoto.addCategory("android.intent.category.DEFAULT");
+                startActivityForResult(intentAddPhoto, REQUSET_CODE);
+                break;
+            case R.id.add_clock:    //添加闹钟功能
+                addclock();         //函数包装
+                break;
+            default:
+                break;
+        }
+        return false;
+    }
+
+    /**
+     *
+     * @param menu
+     * @return
+     */
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.new_lo,menu);
+        return true;
+    }
+
 
 
 }
