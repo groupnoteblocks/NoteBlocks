@@ -70,6 +70,13 @@
                             />
 
                         <EditText
+<<<<<<< HEAD
+=======
+                            android:paddingTop="4dp"
+                            android:paddingBottom="50dp"
+                            android:paddingLeft="7dp"
+                            android:paddingRight="4dp"
+>>>>>>> 83f7b52b3f3fecc99818bd47981412cc408d8f85
                             android:id="@+id/content"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -157,6 +164,7 @@
             android:layout_gravity="bottom|end"
 
             android:layout_margin="15dp"
+            android:src="@drawable/btn_logo_finish"
             app:backgroundTint="@color/colorJabinGreen" />
 
 
