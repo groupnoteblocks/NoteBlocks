@@ -70,21 +70,21 @@
                             />
 
                         <EditText
-                            android:paddingTop="4dp"
+                            android:id="@+id/content"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/content_edit_bg"
+                            android:gravity="top"
+                            android:hint="@string/new_inputcontent"
                             android:paddingBottom="10dp"
                             android:paddingLeft="7dp"
                             android:paddingRight="4dp"
-                            android:id="@+id/content"
-
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-
-                            android:gravity="top"
-
-                            android:hint="@string/new_inputcontent"
-                            android:textSize="18dp"
+                            android:paddingTop="4dp"
+                            android:singleLine="false"
                             android:textColor="#505050"
-                            android:background="@drawable/content_edit_bg"/>
+                            android:textSize="18dp"
+                            android:lineSpacingExtra="5dp"
+                            />
                     </LinearLayout>
 
                     <LinearLayout

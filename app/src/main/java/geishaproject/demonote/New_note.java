@@ -204,26 +204,29 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 //全部文本
                 int startindex=0;      //要替换图片的位置
                 int endindex=0;          //要替换图片的位置
-                Log.d(TAG,"btsize:"+mPhotoTool.BitmaplistSize());
-                if (mPhotoTool.BitmaplistSize()>0)
-                    for (int i=0; i<mPhotoTool.BitmaplistSize();i++){
+                Log.d(TAG,"ed text ;:"+ ed_content.getText().toString());
+                if (mPhotoTool.BitmaplistSize()>0){
+                    for (int i=0; i<mPhotoTool.BitmaplistSize();i++) {
                         //数据定义
-                        Log.d(TAG,""+i);
+                        Log.d(TAG, "" + i);
                         String show;        //要放上去的文本
                         //找到要替换的特殊字符位置
                         endindex = now.indexOf(mPhotoTool.GetSpecialChar());
                         //切割子文本
-                        show = now.substring(0,endindex);
-                        now = now.substring(endindex+1);
+                        show = now.substring(0, endindex);
+                        now = now.substring(endindex + 1);
                         //输出文本
                         ed_content.append(show);
-                        //输出图片，GetSpannableString 富文本操作
-                        SpannableString spannableString = GetSpannableString(mPhotoTool.GetBitmap(i),specialchar);
-                        ed_content.append(spannableString);
 
+                        //输出图片，GetSpannableString 富文本操作  android:lineSpacingMultiplier="1.2"
+                        SpannableString spannableString = GetSpannableString(mPhotoTool.GetBitmap(i), specialchar);
+                        ed_content.append(spannableString);
                     }
+                    ed_content.append(now);
+                }
                 else
                     ed_content.setText(data.getContent());
+
 
             }
         });
