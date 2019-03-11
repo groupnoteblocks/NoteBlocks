@@ -214,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
                     ZipAndUnzip.zip(newDir.getAbsolutePath(), Environment.getExternalStorageDirectory().getPath()+"/NoteBlocksPack.zip");
                     //删除NoteBlocksPack文件夹及其里面的所有文件
                     Constant.deleteFile(newDir);
+                    //Toast.makeText(MainActivity.this, "导出成功！路径为：" + Environment.getExternalStorageDirectory().getPath()+"/NoteBlocksPack.zip", Toast.LENGTH_SHORT).show();
 
                     //ZipUtil.unzip(Environment.getExternalStorageDirectory().getPath()+"/baidu.zip", Environment.getExternalStorageDirectory().getPath());
                 } catch (IOException e) {
@@ -224,6 +225,7 @@ public class MainActivity extends AppCompatActivity {
         });
         //启动线程
         th.start();
+
     }
 
 
@@ -255,7 +257,7 @@ public class MainActivity extends AppCompatActivity {
         intent.setType("*/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         startActivityForResult(intent,1);
-        Toast.makeText(MainActivity.this, "***", Toast.LENGTH_SHORT).show();
+        //Toast.makeText(MainActivity.this, "***", Toast.LENGTH_SHORT).show();
     }
 
     /**
@@ -277,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
             String img_path = actualimagecursor.getString(actual_image_column_index);
             File file = new File(img_path);
 
-            Toast.makeText(MainActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
+            //Toast.makeText(MainActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
             //Log.d("filePath***", file.toString());
             path = file.toString();
             //创建线程，解压NoteBlocks.zip

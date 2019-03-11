@@ -102,7 +102,6 @@ public class Backup {
                     }
                     else if(s.equals("picturePath")){
                         data.setPicturePath(jsonReader.nextString());
-                        data.cutPicturePath();
                     }
                     else if(s.equals("times")){
                         data.setTimes(jsonReader.nextString());
@@ -112,6 +111,7 @@ public class Backup {
                     }
                 }
                 jsonReader.endObject();
+                data.cutPicturePath();
                 boolean flag = DataDao.AddNewData(data);
                 //Log.d("testDataDao*1","data： "+data);
             }

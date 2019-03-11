@@ -135,6 +135,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
         initPhoto(); //初始化拍照功能模块
         initDataModel(); //初始化数据模型
         initEditText();  //初始化文本编辑框
+        Log.d("initFinish","width:"+ed_content.getWidth()+",text: "+ed_content.getText());
     }
 
     /**

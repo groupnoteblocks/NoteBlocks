@@ -22,8 +22,8 @@ public class Data {
         this.audioPath = "";
         this.picturePath = "";
         this.picturePathArr = new ArrayList<>();
+        this.audioPathArr = new ArrayList<>();
     }
-
 
     public Data(int id , String time , String title , String content , String aP , String pP){
         this.ids=id;
@@ -33,7 +33,7 @@ public class Data {
         this.audioPath = aP;
         this.picturePath = pP;
         this.picturePathArr = new ArrayList<>();
-        //setAudioPathArr();
+        //cutAudioPathArr();
         cutPicturePath();
     }
 
@@ -106,8 +106,8 @@ public class Data {
     /*
         对音频路径进行分割，分别存入audioPathArr中
      */
-    /*
-    public void setAudioPathArr(){
+
+    public void cutAudioPathArr(){
         audioPathArr = new ArrayList<>();
         String singleAudioPath = "";
         String oldAudioPath = audioPath;
@@ -133,7 +133,7 @@ public class Data {
             }
         }
     }
-    */
+
 
     /*
         对图片路径进行分割，分别存入picturePathArr中
@@ -167,11 +167,11 @@ public class Data {
     /*
         获取分割好的音频路径数组audioPathArr
      */
-    /*
+
     public ArrayList<String> getAudioPathArr() {
         return audioPathArr;
     }
-    */
+
 
     /*
         获取分割好的图片路径数组picturePathArr
