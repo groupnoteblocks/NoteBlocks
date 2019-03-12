@@ -33,7 +33,7 @@ public class Data {
         this.audioPath = aP;
         this.picturePath = pP;
         this.picturePathArr = new ArrayList<>();
-        //cutAudioPathArr();
+        cutAudioPathArr();
         cutPicturePath();
     }
 
@@ -96,6 +96,10 @@ public class Data {
 
     public void setIds(int ids){
         this.ids = ids;
+    }
+
+    public void clearBitmap() {
+        this.picturePathArr = null;
     }
 
     @Override

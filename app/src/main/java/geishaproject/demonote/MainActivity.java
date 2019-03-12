@@ -13,6 +13,7 @@ import android.content.Intent;
 
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.design.widget.FloatingActionButton;
@@ -23,6 +24,7 @@ import android.support.v7.app.AppCompatActivity;
 
 import android.os.Bundle;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 
@@ -39,8 +41,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 
 
@@ -272,16 +279,28 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == Activity.RESULT_OK) {
             //得到uri，后面就是将uri转化成file的过程。
             Uri uri = data.getData();
-            String[] proj = {MediaStore.Images.Media.DATA};
-            Cursor actualimagecursor = managedQuery(uri, proj, null, null, null);
-            int actual_image_column_index = actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
-            actualimagecursor.moveToFirst();
-            String img_path = actualimagecursor.getString(actual_image_column_index);
-            File file = new File(img_path);
+            //判断版本获取路径的方式，在拿到uri之后进行版本判断大于等于24（即Android7.0）用最新的获取路径方式，否则用之前的方式
+            if (Build.VERSION.SDK_INT >= 24) {
+                //新的方式
+                path = getFilePathFromURI(this, uri);
+            } else {
+                //旧的方式
+                //得到uri，后面就是将uri转化成file的过程。
+                //Uri uri = data.getData();
+                String[] proj = {MediaStore.Images.Media.DATA};
+                Cursor actualimagecursor = managedQuery(uri, proj, null, null, null);
+                int actual_image_column_index = actualimagecursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+                actualimagecursor.moveToFirst();
+                String img_path = actualimagecursor.getString(actual_image_column_index);
+                File file = new File(img_path);
+                path = file.toString();
+            }
 
             //Toast.makeText(MainActivity.this, file.toString(), Toast.LENGTH_SHORT).show();
             //Log.d("filePath***", file.toString());
-            path = file.toString();
+
+            //path = file.toString();
+
             //创建线程，解压NoteBlocks.zip
             Thread th = new Thread(new Runnable() {
                 @Override
@@ -316,6 +335,72 @@ public class MainActivity extends AppCompatActivity {
             th.start();
 
         }
+    }
+
+    /**
+     * 新的方式
+     * @param context
+     * @param contentUri
+     * @return
+     */
+    public String getFilePathFromURI(Context context, Uri contentUri) {
+        File rootDataDir = context.getFilesDir();
+        String fileName = getFileName(contentUri);
+        if (!TextUtils.isEmpty(fileName)) {
+            File copyFile = new File(rootDataDir + File.separator + fileName);
+            copyFile(context, contentUri, copyFile);
+            return copyFile.getAbsolutePath();
+        }
+        return null;
+    }
+
+    public static String getFileName(Uri uri) {
+        if (uri == null) return null;
+        String fileName = null;
+        String path = uri.getPath();
+        int cut = path.lastIndexOf('/');
+        if (cut != -1) {
+            fileName = path.substring(cut + 1);
+        }
+        return fileName;
+    }
+
+    public void copyFile(Context context, Uri srcUri, File dstFile) {
+        try {
+            InputStream inputStream = context.getContentResolver().openInputStream(srcUri);
+            if (inputStream == null) return;
+            OutputStream outputStream = new FileOutputStream(dstFile);
+            copyStream(inputStream, outputStream);
+            inputStream.close();
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public int copyStream(InputStream input, OutputStream output) throws Exception, IOException {
+        final int BUFFER_SIZE = 1024 * 2;
+        byte[] buffer = new byte[BUFFER_SIZE];
+        BufferedInputStream in = new BufferedInputStream(input, BUFFER_SIZE);
+        BufferedOutputStream out = new BufferedOutputStream(output, BUFFER_SIZE);
+        int count = 0, n = 0;
+        try {
+            while ((n = in.read(buffer, 0, BUFFER_SIZE)) != -1) {
+                out.write(buffer, 0, n);
+                count += n;
+            }
+            out.flush();
+        } finally {
+            try {
+                out.close();
+            } catch (IOException e) {
+            }
+            try {
+                in.close();
+            } catch (IOException e) {
+            }
+        }
+        return count;
     }
 
 
