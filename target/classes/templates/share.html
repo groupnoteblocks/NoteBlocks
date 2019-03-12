@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            margin: 0%;
+            padding: 0%;
+            font-family: -apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,"PingFang SC","Hiragino Sans GB",STHeiti,"Microsoft YaHei","Microsoft JhengHei","Source Han Sans SC","Noto Sans CJK SC","Source Han Sans CN","Noto Sans SC","Source Han Sans TC","Noto Sans CJK TC","WenQuanYi Micro Hei",SimSun,sans-serif;
+        }
+
+        .nav_bar {
+            text-align: center;
+            width: 100%;
+            height: 66px;
+            font-size: 16px;
+            background: #fff;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0px 1px 5px #888;
+            z-index: 0;
+        }
+        .nav_inner{
+            margin-top: 20px;
+            overflow: hidden;
+            /* border: 1px solid red; */
+        }
+        .nav_inner::after{
+            content:"";
+            display:block;
+            clear: both;
+        }
+
+        .nav_inner_top_left {
+            float: left;
+            /* border: 1px solid black; */
+            margin-left: 18px;
+        }
+        .title{
+            font-weight: 800;
+        }
+        .time {
+            text-align: left;
+            font-size: 12px;
+            color: #9bcd9b;
+             -webkit-transform-origin: 0% 0%;
+            -webkit-transform: scale(0.9); 
+        }
+
+        .nav_inner_top_right {
+            /* border: 1px solid black; */
+            float: right;
+        }
+        .share{
+            display: block;
+            background:url(share.png);
+            background-size:60%;
+            background-repeat: no-repeat;
+            background-position: 50% 54%;
+            /* border: 1px solid black; */
+            height: 33px;
+            width: 33px;
+            margin-right:12px;
+        }
+        .middle_img_backgroud{
+            background:url(background.jpg); 
+            background-size: cover;
+            height: 240px;
+        }
+        .bottom_content{
+            box-shadow: 0px -1px 5px #595959;
+            background: #f5f5f5;
+        }
+        .content_top_label{
+            text-align: right;
+            position: absolute;
+            background:#fff;
+            height:60px;
+            width:110px; 
+            line-height: 60px;
+            padding-right:25px; 
+            top:276px;
+            border-right:5px solid #9bcd9b;
+            border-top-right-radius: 1px;
+            border-bottom-right-radius: 1px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .user{
+            margin-right: 5px;
+        }
+        .user::before{
+            content:"";
+            position: absolute;
+            display: block;
+            background: url(user.png);
+            background-size: cover;
+            margin-top:15px;
+            margin-left: 25px;
+            height: 30px;           
+            width: 30px; 
+        }
+        .text_content_out{
+            width: 85%;
+            /* border:1px solid black;  */
+            overflow: hidden;
+            margin:0 auto; 
+        }
+        .text_content_in{
+            margin-top: 65px; 
+        }
+        .text_time{
+            font-size:12px;
+            color: #9bcd9b;
+        }
+        .text_title{
+            margin-top:5px;
+            font-size:24px;
+            font-weight:800;
+        }
+        .text_content{
+            color:#333;
+            margin-top:13px;
+            line-height:24px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="nav_bar">
+        <div class="nav_inner">
+            <div class="nav_inner_top_left">
+                <div class="title">
+                    Nice, France
+                </div>
+                <div class="time">
+                    03-08 2019
+                </div>
+            </div>
+            <div class="nav_inner_top_right">
+                <a class="share"></a>
+            </div>
+        </div>
+    </div>
+    <div class = "middle_img_backgroud">
+    </div> 
+    <div class = "bottom_content">
+        <div class="content_top_label">
+            <span class = "user">Jane Doe</span>
+        </div>
+        <div class = "text_content_out">
+            <div class="text_content_in">
+                <div class = "text_time">Tue 03-08</div>
+                <div class = "text_title">Nice, France</div>
+                <div class = "text_content">
+                        Inthe center of your heart and my heart there is a wireless station; 
+                        long as it receives messages of beauty, hope, cheer, courage and power from men and from the Infinite, so long are you young.
+                                When the aerials are down,
+                                s and your spirit is covered with snows of cynicism and the ice of pessimism, then you are grown old, even at twenty, but as long as your aerials are up, to catch the waves of optimism, there is hope you may die young at eighty.
+                </div>
+            </div>
+        </div>
+    </div>  
+</body>
+
+</html>

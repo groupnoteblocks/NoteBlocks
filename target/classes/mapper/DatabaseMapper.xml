@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.mapper.DatabaseMapper">
+    <!--  search table and return isExist  -->
+    <select id="isTableExist" resultType="int">
+        SELECT count(table_name)
+        FROM information_schema.TABLES
+        WHERE table_name = "notes"
+        and table_schema = "noteblocks"
+        ;
+    </select>
+
+    <!--  create new table  -->
+    <update id="createTable">
+        create table notes(
+        user varchar(100),
+        id int primary key auto_increment,
+        ids int,
+        times datetime,
+        title varchar(100),
+        content varchar(10000),
+        audioPath varchar(1000),
+        picturePath varchar(1000),
+        bgShareTime datetime,
+        edShareTime datetime
+        )character set utf8mb4;
+    </update>
+
+
+    <!--  delete data by ids  -->
+    <delete id="delDataByIds" parameterType="Map">
+        delete from notes where ids = #{ids} and user = #{user}
+    </delete>
+
+    <!--  delete data by ids  -->
+    <delete id="delDataById" parameterType="int">
+        delete from notes where id = #{id}
+    </delete>
+
+     <!--  change data begin               -->
+
+        <!--  only change title by ids  -->
+        <update id="setTitleByIds" parameterType="Map">
+            update notes set title = #{title}
+            where ids = #{ids}
+                  and user = #{user};
+        </update>
+
+        <!--  only change content by ids  -->
+        <update id="setContentByIds" parameterType="Map">
+            update notes set content = #{content}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!--  only change times by ids  -->
+        <update id="setTimesByIds" parameterType="Map">
+            update notes set times = #{times}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!--  only change audioPath by ids  -->
+        <update id="setAudioPathByIds" parameterType="Map">
+            update notes set audioPath = #{audioPath}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!--  only change picturePath by ids  -->
+        <update id="setPicturePathByIds" parameterType="Map">
+            update notes set picturePath = #{picturePath}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!--  only change begin share time by ids -->
+        <update id="setBgShareTimeByIds" parameterType="Map">
+            update notes set bgShareTime = #{bgShareTime}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!--  only change stop share time by ids -->
+        <update id="setEdShareTimeByIds" parameterType="Map">
+            update notes set edShareTime = #{edShareTime}
+            where ids = #{ids}
+            and user = #{user};
+        </update>
+
+        <!-- change all property by data-->
+        <update id="fullUpdateData" parameterType="com.example.demo.model.Note">
+            update notes set    times=#{times},
+                                title=#{title},
+                                content=#{content},
+                                audioPath=#{audioPath},
+                                picturePath=#{picturePath},
+                                bgShareTime=#{bgShareTime},
+                                edShareTime=#{edShareTime}
+            where ids=#{ids} and user=#{user};
+        </update>
+
+    <!--  change data end               -->
+
+    <!--  add new data in database by Class Note model  -->
+    <insert id="addData" parameterType="com.example.demo.model.Note">
+        insert into notes(  user,
+                            ids,
+                            times,
+                            title,
+                            content,
+                            audioPath,
+                            picturePath,
+                            bgShareTime,
+                            edShareTime)
+                    values( #{user},
+                            #{ids},
+                            #{times},
+                            #{title},
+                            #{content},
+                            #{audioPath},
+                            #{picturePath},
+                            #{bgShareTime},
+                            #{edShareTime}
+                            );
+    </insert>
+
+    <!--  get data from database by ids and User -->
+    <select id="searchDataByIds" parameterType="Map" resultType="com.example.demo.model.Note">
+        select * from notes where ids = #{ids} and user = #{user};
+    </select>
+
+    <!--  get data from database by id -->
+    <select id="searchDataById" parameterType="int" resultType="com.example.demo.model.Note">
+        select * from notes where id = #{id};
+    </select>
+
+    <!--  get all datas -->
+    <select id="getDatas" resultType="com.example.demo.model.Note" parameterType="String">
+        select * from notes where user = #{user};
+    </select>
+
+    <select id="getMaxIds" parameterType="String" resultType="int">
+        select max(ids) from notes where user = #{user};
+    </select>
+
+</mapper>

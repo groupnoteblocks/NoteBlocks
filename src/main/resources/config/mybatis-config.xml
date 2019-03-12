@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+        PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+    <!-- 加载类路径下的属性文件 -->
+    <properties resource="config/db.properties"/>
+
+    <environments default="development">
+        <environment id="development">
+
+            <!-- 使用JDBC事务 -->
+            <transactionManager type="JDBC"/>
+
+            <!-- 使用数据库连接池 连接数据库  -->
+            <dataSource type="POOLED">
+                <!--  从上面设置的属性文件db.properties中读取下面的driver url username password 属性  -->
+                <property name="driver" value="${driver}"/>
+                <property name="url" value="${url}"/>
+                <property name="username" value="${username}"/>
+                <property name="password" value="${password}"/>
+            </dataSource>
+
+        </environment>
+    </environments>
+
+    <!--  设置各个mapper.xml的路径，用于存放sql语句  -->
+    <mappers>
+        <mapper resource="mapper/DatabaseMapper.xml"/>
+    </mappers>
+
+</configuration>
