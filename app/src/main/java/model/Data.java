@@ -98,6 +98,10 @@ public class Data {
         this.ids = ids;
     }
 
+    public void clearBitmap() {
+        this.picturePathArr = null;
+    }
+
     @Override
     public String toString() {
         return getIds()+","+getTimes()+","+getTitle()+","+getContent()+","+getAudioPath()+","+getPicturePath();

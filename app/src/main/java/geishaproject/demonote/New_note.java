@@ -49,6 +49,7 @@ import android.view.MenuItem;
 import android.view.View;
 
 import android.view.ViewTreeObserver;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -90,8 +91,6 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
     FloatingActionButton floatingActionButton;  //右下角按钮
     Data data;    //当前界面读取到的数据
     PhotoTool mPhotoTool;       //图像工具类
-    static java.util.List<Bitmap> bitmaplist = new java.util.ArrayList<Bitmap>();       ////照片数组
-    String specialchar = "a";       //放置照片的特殊字符
     Uri photoUri;                   //相机url
 
     /*  相片部分  */
@@ -119,6 +118,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.new_note);
+        getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
         init();              //活动初始化
         addClickListenenr(); //添加活动的所有监听事件
     }
@@ -179,8 +179,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
 
         ed_title.setText(data.getTitle());  //获取对应的值
         mPhotoTool.doclear();
-        mPhotoTool.initloadphoto();
-
+        mPhotoTool.readyAdress();
         initifphotohave();
     }
 
@@ -198,36 +197,37 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
             public void onGlobalLayout() {
                 // TODO Auto-generated method stub
                 ed_content.getViewTreeObserver().removeGlobalOnLayoutListener(this);
-
                 mPhotoTool.addsize(ed_content.getWidth(),ed_content.getHeight());
                 String world = data.getContent();
                 String now = world;         //还有的文本
                 //全部文本
                 int startindex=0;      //要替换图片的位置
-                int endindex=0;          //要替换图片的位置
-                Log.d(TAG,"ed text ;:"+ ed_content.getText().toString());
-                if (mPhotoTool.BitmaplistSize()>0){
-                    for (int i=0; i<mPhotoTool.BitmaplistSize();i++) {
+                int endindex=0;        //要替换图片的位置
+                int i=0;               //变量
+                Bitmap bitmap= null;
+                Log.d(TAG,"ed text ;:"+ mPhotoTool.BitmapAdressSize());
+                if (mPhotoTool.BitmapAdressSize()>0){
+                    for (i=0; i<mPhotoTool.BitmapAdressSize();i++) {
                         //数据定义
-                        Log.d(TAG, "" + i);
+                        Log.d(TAG, "要切的文本" + mPhotoTool.GetBitmapNmae(i));
                         String show;        //要放上去的文本
                         //找到要替换的特殊字符位置
-                        endindex = now.indexOf(mPhotoTool.GetSpecialChar());
+                        endindex = now.indexOf(mPhotoTool.GetBitmapNmae(i));
                         //切割子文本
                         show = now.substring(0, endindex);
-                        now = now.substring(endindex + 1);
+                        now = now.substring(endindex + mPhotoTool.GetBitmapNmae(i).length());
                         //输出文本
                         ed_content.append(show);
-
-                        //输出图片，GetSpannableString 富文本操作  android:lineSpacingMultiplier="1.2"
-                        SpannableString spannableString = GetSpannableString(mPhotoTool.GetBitmap(i), specialchar);
+                        //输出图片，GetSpannableString 富文本操作
+                        bitmap = mPhotoTool.getBitmapForAdress(mPhotoTool.GetBitmapNmae(i));
+                        SpannableString spannableString = GetSpannableString(bitmap, mPhotoTool.GetBitmapNmae(i));
                         ed_content.append(spannableString);
                     }
+                    if(i == mPhotoTool.BitmapAdressSize())
                     ed_content.append(now);
                 }
                 else
                     ed_content.setText(data.getContent());
-
 
             }
         });
@@ -401,13 +401,13 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-
                 if (result != null) {
-                    SpannableString spannableString = GetSpannableString(result,specialchar);
-                    ed_content.append(spannableString);
-                    String currentTime = mPhotoTool.GetcurrentTime();
+                    //将图片一次性切好
+                    Bitmap imgBitmap = imageScale(result,ed_content.getWidth(),Math.round(result.getHeight()*((float) ed_content.getWidth()/result.getWidth())));
                     //保存图片
-                    mPhotoTool.saveImg(result,currentTime+".jpg",this);
+                    mPhotoTool.saveImg(imgBitmap,this);
+                    SpannableString spannableString = GetSpannableString(imgBitmap,mPhotoTool.GetBitmapNmae(mPhotoTool.BitmapAdressSize()-1));
+                    ed_content.append(spannableString);
                 }
             }else if (resultCode == Activity.RESULT_CANCELED) {
                 //说明取消或失败了
@@ -422,12 +422,10 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
     public SpannableString GetSpannableString(Bitmap bitmap,String specialchar){
         SpannableString spannableString = new SpannableString(specialchar);
         Log.d(TAG,"diaonma"+ed_content.getWidth()+"////"+ed_content.getHeight());
-        Bitmap imgBitmap = imageScale(bitmap,ed_content.getWidth(),Math.round(bitmap.getHeight()*((float) ed_content.getWidth()/bitmap.getWidth())));
-
-        BitmapFactory.Options opts = new BitmapFactory.Options();
-        opts.inSampleSize = 2;
-        Log.d(TAG,"大小为（m）："+imgBitmap.getByteCount() / 1024 / 1024+"宽度为" + imgBitmap.getWidth() + "高度为" + imgBitmap.getHeight());
-        ImageSpan imgSpan = new ImageSpan(PublicContext.getContext(),imgBitmap, DynamicDrawableSpan.ALIGN_BASELINE);
+       /* BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inSampleSize = 2;*/
+        Log.d(TAG,"大小为（m）："+bitmap.getByteCount() / 1024 / 1024+"宽度为" + bitmap.getWidth() + "高度为" + bitmap.getHeight());
+        ImageSpan imgSpan = new ImageSpan(PublicContext.getContext(),bitmap, DynamicDrawableSpan.ALIGN_BASELINE);
         spannableString.setSpan(imgSpan, 0, spannableString.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         return spannableString;
     }
@@ -525,11 +523,14 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd   HH:mm");//编辑便签的时间，格式化
         Date date = new Date(System.currentTimeMillis());
         String time = simpleDateFormat.format(date);
-
+        //先将数据库内setPicturePath置空，在saveimg中才将正确的留下
+        data.setPicturePath("");
         data.setTimes(time);    //给当前data更新数据,如果有录音和拍照数据，应该在对应的过程中调用data.setXXX
         data.setTitle(ed_title.getText().toString());
         data.setContent(ed_content.getText().toString());
-
+        //才将图片保存进入数据库
+        check();
+        //
         if(data.getIds()!=0){ //根据data修改数据库
             DataDao.ChangeData(data);
             Intent intent=new Intent(New_note.this,MainActivity.class);
@@ -541,6 +542,42 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
             startActivity(intent);
             New_note.this.finish();
         }
+    }
+
+    /**
+     * 才将图片保存进入数据库
+     */
+    private void check() {
+        String world = data.getContent();
+        String now = world;         //还有的文本
+        int startindex=0;      //要替换图片的位置
+        int endindex=0;        //要替换图片的位置
+        int i=0;               //变量
+        int temp = 0;
+        Log.d(TAG,""+mPhotoTool.BitmapAdressSize());
+        if (mPhotoTool.BitmapAdressSize()>0){
+            for (i=0; i<mPhotoTool.BitmapAdressSize();i++) {
+                //数据定义
+                String show;        //要放上去的文本
+                //找到要替换的特殊字符位置
+                Log.d(TAG,"dizhi:"+mPhotoTool.GetBitmapNmae(i));
+                endindex = now.indexOf(mPhotoTool.GetBitmapNmae(i));
+                if(endindex == -1){
+                    //删除实际文件
+                    mPhotoTool.deleteBitmapForAdress(mPhotoTool.GetBitmapNmae(i-temp));
+                    //删除变量内容
+                    mPhotoTool.delete(i-temp);
+                    temp++;
+                }else{
+                    //切割子文本
+                    show = now.substring(0, endindex);
+                    now = now.substring(endindex + mPhotoTool.GetBitmapNmae(i).length());
+                    //输出文本
+                }
+            }
+        }
+        //当检查完后才真正保存
+        mPhotoTool.saveToData();
     }
 
     /**
@@ -563,24 +600,7 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 Intent intentAddPhoto =new Intent();
                 intentAddPhoto.setAction("android.media.action.IMAGE_CAPTURE");
                 intentAddPhoto.addCategory("android.intent.category.DEFAULT");
-                //创建图片文件需要用到时间字符串
-                /*File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocksPicture");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }*/
-
-                File dir = new File(Environment.getExternalStorageDirectory(), "NoteBlocks");
-                if (!dir.exists()) {
-                    dir.mkdirs();
-                }
-                File dir1 = new File(dir, "picture");
-                if (!dir1.exists()) {
-                    dir1.mkdirs();
-                }
-
-                //图片文件名
-                String name = mPhotoTool.GetcurrentTime() + ".jpg";
-                File pictureFile = new File(dir1, name);
+                File pictureFile = new File(mPhotoTool.getAdress());
                 if (!pictureFile.exists()) {
                     try {
                         pictureFile.createNewFile();
@@ -590,7 +610,6 @@ public class New_note extends AppCompatActivity implements ViewTreeObserver.OnPr
                 }
                 Intent intents = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                 photoUri = Uri.fromFile(new File(String.valueOf(pictureFile)));
-                Log.d(TAG," **!!**"+dir1 + String.valueOf(pictureFile));
                 intents.putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
                 startActivityForResult(intents, REQUSET_CODE);
 

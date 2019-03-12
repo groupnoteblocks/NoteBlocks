@@ -37,7 +37,9 @@
         </receiver>
         <activity android:name=".TimeWram">
         </activity>
+        <activity android:name=".New_note">
 
+        </activity>
         <activity android:name="geishaproject.demonote.New_note"></activity>
         <!--
         <activity android:name="geishaproject.model.Data"></activity>
